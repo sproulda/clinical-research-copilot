@@ -2,29 +2,15 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from app.database import SessionLocal
 from app.models import DocumentChunk
-import numpy as np
-import json
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from app.services.evaluation_service import hallucination_check, answer_quality_score
-
 
 router = APIRouter()
 
 class QueryRequest(BaseModel):
     question: str
 
-def chunk_similarity(question_emb, chunk_emb):
-    """Cosine similarity"""
-    return np.dot(question_emb, chunk_emb) / (np.linalg.norm(question_emb) * np.linalg.norm(chunk_emb))
-
-def generate_mock_answer(question, top_chunks):
-    """
-    Simple grounded answer generator that stitches together top chunks.
-    Keeps system deterministic and grounded.
-    """
-    combined_context = " ".join([c[1] for c in top_chunks])
-
-    # Very basic heuristic answer
-    return f"Based on the retrieved documents, {combined_context[:400]}"
 
 @router.post("/query/")
 def query_document(request: QueryRequest):
@@ -33,40 +19,50 @@ def query_document(request: QueryRequest):
     db.close()
 
     if not chunks:
-        return {"error": "No document chunks available."}
+        return {"error": "No document chunks found."}
 
-    # Mock question embedding
-    question_emb = np.random.rand(1536)
+    # Extract chunk texts
+    chunk_texts = [chunk.chunk_text for chunk in chunks]
 
-    # Similarity scoring
-    chunks_scores = []
-    for chunk in chunks:
-        chunk_emb = np.array(json.loads(chunk.embedding))
-        score = chunk_similarity(question_emb, chunk_emb)
-        chunks_scores.append((score, chunk.chunk_text))
+    # Create corpus (chunks + question)
+    corpus = chunk_texts + [request.question]
 
-    # Sort and select top 3
-    chunks_scores.sort(reverse=True, key=lambda x: x[0])
-    top_chunks = chunks_scores[:3]
+    # TF-IDF vectorization
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix = vectorizer.fit_transform(corpus)
 
-    # Generate grounded answer
-    answer = generate_mock_answer(request.question, top_chunks)
+    # Last vector is the question
+    question_vector = tfidf_matrix[-1]
+    chunk_vectors = tfidf_matrix[:-1]
 
-    # Extract just the text for evaluation
-    context_chunks = [c[1] for c in top_chunks]
+    # Compute cosine similarity
+    similarities = cosine_similarity(question_vector, chunk_vectors)[0]
 
-    # Run evaluation
-    hallucination_results = hallucination_check(answer, context_chunks)
-    quality_results = answer_quality_score(answer, context_chunks)
+    # Rank chunks
+    ranked = sorted(
+        zip(similarities, chunk_texts),
+        reverse=True,
+        key=lambda x: x[0]
+    )
+
+    top_chunks = ranked[:3]
+
+    # Simple answer generation
+    answer_text = " ".join([chunk[1] for chunk in top_chunks])
+
+    # Evaluation
+    hallucination_result = hallucination_check(answer_text, [c[1] for c in top_chunks])
+    quality_result = answer_quality_score(answer_text, [c[1] for c in top_chunks])
 
     return {
         "question": request.question,
-        "answer": answer,
+        "answer": answer_text,
         "top_chunks": [
-            {"text": c[1], "similarity": c[0]} for c in top_chunks
+            {"text": c[1], "similarity": float(c[0])}
+            for c in top_chunks
         ],
         "evaluation": {
-            "hallucination": hallucination_results,
-            "quality": quality_results
+            "hallucination": hallucination_result,
+            "quality": quality_result
         }
     }
