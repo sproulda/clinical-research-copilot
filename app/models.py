@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 from app.database import Base
 import json
@@ -9,7 +10,7 @@ class Document(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     content = Column(Text, nullable=False)
-    authors = Column(Text, nullable=True)  # NEW: store as JSON string or comma-separated
+    authors = Column(ARRAY(String), nullable=False)
 
     chunks = relationship("DocumentChunk", back_populates="document")
 
