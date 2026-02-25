@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
+import numpy as np
 from app.database import SessionLocal
 from app.models import DocumentChunk
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -7,6 +8,16 @@ from sklearn.metrics.pairwise import cosine_similarity
 from app.services.evaluation_service import hallucination_check, answer_quality_score
 
 router = APIRouter()
+
+
+def chunk_similarity(a, b) -> float:
+    """Return cosine similarity between two 1-D arrays."""
+    a = np.asarray(a)
+    b = np.asarray(b)
+    denom = (np.linalg.norm(a) * np.linalg.norm(b))
+    if denom == 0:
+        return 0.0
+    return float(np.dot(a, b) / denom)
 
 class QueryRequest(BaseModel):
     question: str
