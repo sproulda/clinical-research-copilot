@@ -1,82 +1,106 @@
 # Clinical Research Copilot
 
-[![Python](https://img.shields.io/badge/python-3.9-blue)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100.0-green)](https://fastapi.tiangolo.com/)
-[![Docker](https://img.shields.io/badge/docker-20.10-blue?logo=docker)](https://www.docker.com/)
-[![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
+Clinical Research Copilot is a containerized FastAPI application for
+ingesting, querying, and evaluating clinical research documents. It
+demonstrates backend architecture, database modeling, TF-IDF embeddings,
+evaluation metrics, and Dockerized infrastructure for reproducible
+development.
 
-**Clinical Research Copilot** is a containerized FastAPI application for ingesting, querying, and evaluating clinical research documents. The project demonstrates backend architecture, database modeling, TF-IDF embeddings, evaluation metrics, and Dockerized infrastructure for reproducible development environments.
+------------------------------------------------------------------------
 
----
+## Features
 
-## 🔹 Features
+-   Upload, store, and retrieve clinical research documents
+-   Query top relevant document chunks using TF-IDF embeddings
+-   Mock hallucination detection and answer quality scoring
+-   PostgreSQL for persistent document storage
+-   Docker + Docker Compose for reproducible development
+-   Clean separation of models, services, routes, and database layers
 
-- **Document Management:** Upload, store, and retrieve clinical research documents  
-- **Query System:** Retrieve top relevant document chunks using TF-IDF embeddings and cosine similarity  
-- **Evaluation Metrics:** Mock hallucination detection and answer quality scoring  
-- **Database:** PostgreSQL for persistent document storage  
-- **Containerized Development:** Docker + Docker Compose for reproducible setup  
-- **Scalable Architecture:** Separation of `models`, `services`, `routes`, and `database`  
-- **API Documentation:** Swagger UI at `/docs`
+------------------------------------------------------------------------
 
----
+## Tech Stack
 
-## 🛠 Tech Stack
+-   Python 3.9
+-   FastAPI
+-   PostgreSQL
+-   SQLAlchemy
+-   TF-IDF (scikit-learn)
+-   Docker & Docker Compose
+-   Git
 
-- **Backend:** Python 3.9, FastAPI  
-- **Database:** PostgreSQL, SQLAlchemy ORM  
-- **Vectorization:** Scikit-learn TF-IDF embeddings  
-- **Containerization:** Docker, Docker Compose  
-- **Testing / Development:** `uvicorn` hot reload, Git feature branches  
+------------------------------------------------------------------------
 
----
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop)  
-- Git  
-
----
+-   Docker Desktop
+-   Git
 
 ### Installation & Run
 
-```bash
+``` bash
 git clone https://github.com/sproulda/clinical-research-copilot.git
 cd clinical-research-copilot
 docker compose up --build
-The API will be available at:
+```
 
-http://localhost:8000
-Swagger docs:
+API base URL:
 
-http://localhost:8000/docs
-Environment Variables
-Create a .env file in the root (optional for TF-IDF prototype):
+    http://localhost:8000
 
+Swagger documentation:
+
+    http://localhost:8000/docs
+
+------------------------------------------------------------------------
+
+## Environment Variables
+
+Create a `.env` file in the root (optional for TF-IDF prototype):
+
+``` env
 DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
-Note: OpenAI API keys are not required for TF-IDF-based testing.
+```
 
-🔹 API Endpoints
-1. Upload Documents
-POST /documents/
-Body Example:
+OpenAI API keys are not required for TF-IDF testing.
 
+------------------------------------------------------------------------
+
+## API Endpoints
+
+### Upload Documents
+
+    POST /documents/
+
+Example request body:
+
+``` json
 {
   "title": "Hypertension Study 2024",
   "content": "This study evaluates beta-blockers in stage 1 hypertension...",
   "authors": ["Dr. Smith", "Dr. Lee"]
 }
-2. Query Documents
-POST /query/
-Body Example:
+```
 
+------------------------------------------------------------------------
+
+### Query Documents
+
+    POST /query/
+
+Example request body:
+
+``` json
 {
   "question": "What are the main findings about cardiovascular risk in elderly patients?"
 }
-Response Example:
+```
 
+Example response:
+
+``` json
 {
   "question": "What are the main findings ...",
   "answer": "This is a mock answer generated from the top chunks.",
@@ -88,39 +112,34 @@ Response Example:
     "quality": {"answer_length_words": 63, "context_coverage_ratio": 0.69}
   }
 }
-🗂 Project Structure
-app/
-├── main.py               # FastAPI app entrypoint
-├── routes/               # API routes (documents, query)
-├── services/             # Business logic (document processing, embeddings, evaluation)
-├── models.py             # SQLAlchemy models
-├── database.py           # Engine, SessionLocal, Base
-docker-compose.yml        # Compose setup for app + PostgreSQL
-Dockerfile                # Docker image build for app
-requirements.txt          # Python dependencies
-🧪 Local Testing
-Upload documents with /documents/
+```
 
-Query using /query/
+------------------------------------------------------------------------
 
-Evaluate TF-IDF retrieval and mock metrics
+## Project Structure
 
-Optional: run tests with pytest (if implemented)
+    app/
+    ├── main.py
+    ├── routes/
+    ├── services/
+    ├── models.py
+    ├── database.py
+    docker-compose.yml
+    Dockerfile
+    requirements.txt
 
-🌟 Example Screenshots
-Swagger API Docs:
+------------------------------------------------------------------------
 
-Query Result Example:
+## Future Improvements
 
-Replace these URLs with actual screenshots you take locally for full effect.
+-   Replace TF-IDF with real LLM embeddings
+-   Add authentication and user roles
+-   Add CI/CD pipeline
+-   Add frontend interface
+-   Add logging and monitoring
 
-🔜 Future Enhancements
-Swap TF-IDF embeddings for OpenAI or other LLM embeddings
+------------------------------------------------------------------------
 
-Expand evaluation scripts for real hallucination detection
+## License
 
-Add authentication and user roles
-
-Integrate lightweight frontend (React/Vue)
-
-Add logging, monitoring, and CI/CD pipelines
+MIT License
